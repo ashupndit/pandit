@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KHOTI Assistant - Advanced Voice Control</title>
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --primary-color: #00ff88;
+            --dark-bg: #1a1a1a;
+            --light-text: #ffffff;
+            --accent-color: #ff3366;
+            --success-color: #00ff88;
+            --error-color: #ff4444;
+        }
+
+        body {
+            background: var(--dark-bg);
+            color: var(--light-text);
+            min-height: 100vh;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        /* Splash Screen */
+        .splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--dark-bg);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.5s;
+        }
+
+        .splash-logo {
+            font-size: 5em;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        .splash-info {
+            text-align: center;
+            margin-top: 20px;
+            color: var(--light-text);
+            opacity: 0.8;
+        }
+
+        /* Main Interface */
+        .main-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            display: none;
+        }
+
+        .status-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .mic-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+            z-index: 100;
+            font-size: 24px;
+            transition: transform 0.2s;
+        }
+
+        .mic-button:active {
+            transform: scale(0.95);
+        }
+
+        .mic-active {
+            animation: pulse 1.5s infinite;
+        }
+
+        .command-history {
+            margin-top: 60px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
+
+        .command-item {
+            padding: 12px;
+            margin: 8px 0;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .command-list {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .command-example {
+            padding: 8px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 5px;
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Utility Classes */
+        .hidden {
+            display: none;
+        }
+
+        .status-indicator {
+            padding: 5px 10px;
+            border-radius: 15px;
+            background: rgba(0, 255, 136, 0.2);
+            font-size: 0.9em;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            .splash-logo {
+                font-size: 3em;
+            }
+
+            .command-history {
+                margin-top: 50px;
+            }
+
+            .mic-button {
+                width: 60px;
+                height: 60px;
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div class="splash-screen" id="splashScreen">
+        <h1 class="splash-logo">KHOTI</h1>
+        <p>Your Advanced Voice Assistant</p>
+        <div class="splash-info">
+            <p>Current Time: 2025-03-23 08:43:16</p>
+            <p>User: ashupndit</p>
+        </div>
+    </div>
+
+    <!-- Main Interface -->
+    <div class="status-bar">
+        <div class="status-indicator" id="statusIndicator">Initializing...</div>
+        <div class="user-info">ashupndit</div>
+    </div>
+
+    <div class="main-container" id="mainContainer">
+        <div class="command-history" id="commandHistory">
+            <!-- Command history will be added here -->
+        </div>
+
+        <div class="command-list">
+            <h3>Available Commands:</h3>
+            <div class="command-example">📞 "Hey KHOTI, call [contact]"</div>
+            <div class="command-example">✉️ "Hey KHOTI, message to [contact] saying [text]"</div>
+            <div class="command-example">📱 "Hey KHOTI, open [app]"</div>
+            <div class="command-example">🔒 "Hey KHOTI, lock device"</div>
+            <div class="command-example">🔊 "Hey KHOTI, volume [up/down/mute]"</div>
+            <div class="command-example">💡 "Hey KHOTI, brightness [full/half/low]"</div>
+            <div class="command-example">📍 "Hey KHOTI, where am I"</div>
+            <div class="command-example">📷 "Hey KHOTI, open camera"</div>
+        </div>
+    </div>
+
+    <div class="mic-button" id="micButton">🎤</div>
+
+    <script>
+        class KhotiAssistant {
+            constructor() {
+                this.isListening = false;
+                this.isWaitingForCommand = false;
+                this.currentUser = 'ashupndit';
+                this.startTime = '2025-03-23 08:43:16';
+                this.commandHistory = [];
+                this.setupSpeechRecognition();
+                this.initializeInterface();
+            }
+
+            setupSpeechRecognition() {
+                if ('webkitSpeechRecognition' in window) {
+                    this.recognition = new webkitSpeechRecognition();
+                    this.recognition.continuous = true;
+                    this.recognition.interimResults = true;
+
+                    this.recognition.onresult = (event) => {
+                        const transcript = Array.from(event.results)
+                            .map(result => result[0].transcript.toLowerCase())
+                            .join('');
+
+                        if (transcript.includes('hey khoti')) {
+                            this.handleWakeWord();
+                        } else if (this.isWaitingForCommand) {
+                            this.processCommand(transcript);
+                        }
+                    };
+
+                    this.recognition.onend = () => {
+                        if (this.isListening) {
+                            this.recognition.start();
+                        }
+                    };
+                } else {
+                    this.logAction('Speech recognition not supported in this browser');
+                }
+            }
+
+            initializeInterface() {
+                // Hide splash screen after 3 seconds
+                setTimeout(() => {
+                    document.getElementById('splashScreen').style.opacity = '0';
+                    document.getElementById('splashScreen').style.display = 'none';
+                    document.getElementById('mainContainer').style.display = 'block';
+                }, 3000);
+
+                // Setup mic button
+                document.getElementById('micButton').addEventListener('click', () => {
+                    this.toggleListening();
+                });
+            }
+
+            toggleListening() {
+                if (this.isListening) {
+                    this.stopListening();
+                } else {
+                    this.startListening();
+                }
+            }
+
+            startListening() {
+                if (this.recognition) {
+                    this.isListening = true;
+                    this.recognition.start();
+                    document.getElementById('micButton').classList.add('mic-active');
+                    this.updateStatus('Listening for "Hey KHOTI"...');
+                }
+            }
+
+            stopListening() {
+                if (this.recognition) {
+                    this.isListening = false;
+                    this.recognition.stop();
+                    document.getElementById('micButton').classList.remove('mic-active');
+                    this.updateStatus('Assistant paused');
+                }
+            }
+
+            handleWakeWord() {
+                this.isWaitingForCommand = true;
+                this.updateStatus('Listening for command...');
+                this.speak('How can I help you?');
+
+                setTimeout(() => {
+                    if (this.isWaitingForCommand) {
+                        this.isWaitingForCommand = false;
+                        this.updateStatus('Listening for "Hey KHOTI"...');
+                    }
+                }, 5000);
+            }
+
+            processCommand(command) {
+                this.logAction(`Command received: ${command}`);
+
+                // Command patterns
+                const patterns = {
+                    call: /call\s+(.+)/i,
+                    message: /message to\s+(.+?)\s+saying\s+(.+)/i,
+                    open: /open\s+(.+)/i,
+                    lock: /lock device/i,
+                    volume: /volume\s+(up|down|mute)/i,
+                    brightness: /brightness\s+(full|half|low)/i,
+                    location: /where am i/i,
+                    camera: /open camera/i
+                };
+
+                try {
+                    if (patterns.call.test(command)) {
+                        const contact = command.match(patterns.call)[1];
+                        Android.makeCall(contact);
+                        this.speak(`Calling ${contact}`);
+                    }
+                    else if (patterns.message.test(command)) {
+                        const matches = command.match(patterns.message);
+                        Android.sendSMS(matches[1], matches[2]);
+                        this.speak(`Sending message to ${matches[1]}`);
+                    }
+                    else if (patterns.open.test(command)) {
+                        const app = command.match(patterns.open)[1];
+                        Android.openApp(app);
+                        this.speak(`Opening ${app}`);
+                    }
+                    else if (patterns.lock.test(command)) {
+                        Android.lockDevice();
+                        this.speak('Locking device');
+                    }
+                    else if (patterns.volume.test(command)) {
+                        const action = command.match(patterns.volume)[1];
+                        Android.setVolume(action === 'up' ? 1 : action === 'down' ? -1 : 0);
+                        this.speak(`Volume ${action}`);
+                    }
+                    else if (patterns.brightness.test(command)) {
+                        const level = command.match(patterns.brightness)[1];
+                        const brightnessLevel = {
+                            full: 255,
+                            half: 128,
+                            low: 30
+                        };
+                        Android.setBrightness(brightnessLevel[level]);
+                        this.speak(`Setting brightness to ${level}`);
+                    }
+                    else if (patterns.location.test(command)) {
+                        Android.getLocation();
+                        this.speak('Getting your location');
+                    }
+                    else if (patterns.camera.test(command)) {
+                        Android.openCamera();
+                        this.speak('Opening camera');
+                    }
+                    else {
+                        this.speak("I didn't understand that command");
+                    }
+                } catch (error) {
+                    console.error('Error executing command:', error);
+                    this.speak("Sorry, I couldn't execute that command");
+                }
+
+                this.isWaitingForCommand = false;
+                this.updateStatus('Listening for "Hey KHOTI"...');
+            }
+
+            speak(text) {
+                if (window.Android) {
+                    Android.speakText(text);
+                }
+                this.logAction(`Assistant: ${text}`);
+            }
+
+            logAction(text) {
+                const history = document.getElementById('commandHistory');
+                const entry = document.createElement('div');
+                entry.className = 'command-item';
+                entry.textContent = `${new Date().toLocaleTimeString()} - ${text}`;
+                history.insertBefore(entry, history.firstChild);
+            }
+
+            updateStatus(text) {
+                document.getElementById('statusIndicator').textContent = text;
+            }
+        }
+
+        // Initialize KHOTI Assistant when the page loads
+        window.onload = () => {
+            window.khoti = new KhotiAssistant();
+        };
+    </script>
+</body>
+</html>
